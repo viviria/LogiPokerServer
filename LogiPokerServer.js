@@ -1,4 +1,3 @@
-const { createCipher } = require('crypto');
 const express = require('express')
 const app = express()
 const http = require('http')
@@ -21,10 +20,17 @@ let RoomIDList = []
 
 // 接続時イベント
 io.on('connection', (socket) => {
-    console.log('connected: ' + socket.id);
+    // ルームの人数を送る
+    socket.on('request_room_user_num_map', () => {
+        const RoomUserNumMap = {}
+        for (let RoomID of RoomIDList) {
+            RoomUserNumMap[RoomID] = UserList.filter(x => x.GetRoomID() === RoomID).length
+        }
+        io.emit('reponse_room_user_num_map', RoomUserNumMap)
+    })
 
     // クライアントから名前を登録
-    socket.on('enter-user', (RoomID, UserName) => {
+    socket.on('enter_user', (RoomID, UserName) => {
         // 新規ユーザーデータ作成
         const User = new UserData(socket.id, RoomID, UserName)
         // すでにルームが存在する
@@ -36,13 +42,13 @@ io.on('connection', (socket) => {
             // すでに同名が存在する
             if (SameNameUser) {
                 // 登録失敗を新規ユーザーに通知
-                io.to(socket.id).emit('cannot-enter-user', UserName)
+                io.to(socket.id).emit('cannot_enter_user', UserName)
                 console.log('cannot enter user: ' + UserName)
             } else {
                 // ユーザーリストに追加
                 UserList.push(User)
                 // ルーム内に登録を通知
-                io.to(RoomID).emit('enter-player', UserName)
+                io.to(RoomID).emit('enter_player', UserName)
                 console.log('enter user: ' + UserName)
             }
             console.log(UserList.filter(x => x.GetRoomID() === RoomID))
@@ -54,7 +60,7 @@ io.on('connection', (socket) => {
             // ユーザーリストに追加
             UserList.push(User)
             // ルーム内に登録を通知
-            io.to(RoomID).emit('enter-player', UserName)
+            io.to(RoomID).emit('enter_player', UserName)
             console.log('enter user: ' + UserName)
         }
     })
@@ -67,7 +73,7 @@ io.on('connection', (socket) => {
             // ユーザーリストから削除
             UserList = UserList.filter(x => x.GetUserID() !== socket.id)
             // 切断を通知
-            io.to(User.GetRoomID()).emit('disconnect-user', User.GetUserName())
+            io.to(User.GetRoomID()).emit('disconnect_user', User.GetUserName())
             console.log('disconnect user: ' + socket.id)
             
             // ルーム内のユーザーを取得
