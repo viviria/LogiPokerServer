@@ -7,22 +7,32 @@
 </head>
 <body>
     <h1 style="padding-top: 3%; padding-left: 5%;">LogiPoker</h1>
-
-    <div id="players">
-    </div>
+    <h2 id="own-player-name" style="padding-left: 5%;"></h2>
+    <ul id="player-list" style="padding-left: 5%;">
+    </ul>
 </body>
 <script src="https://cdn.socket.io/3.1.3/socket.io.min.js"></script>
 <script type="text/javascript">
 $(function() {
     const socket = io()
     const UserID = localStorage.getItem('LogiPokerUserID')
-    
     // 接続開始処理
     socket.emit('Enter', UserID)
 
     socket.emit('RequestUserData', UserID)
-    socket.on('ResponseUserData', (UserName) => {
-        console.log(UserName)
+    socket.on('ResponseUserData', (UserName, RoomID) => {
+        const OwnPlayerName = document.getElementById('own-player-name')
+        if (OwnPlayerName) {
+            OwnPlayerName.innerHTML = UserName
+
+            socket.emit('RequestUserNumInRoomID', RoomID)
+            socket.on('ResponseUserNumInRoomID', (UsersInRoom) => {
+                const PlayerList = document.getElementById('player-list')
+                for (User of UsersInRoom) {
+                    PlayerList.innerHTML += ('<li>' + User + '</li>')
+                }
+            })
+        }
     })
 })
 </script>

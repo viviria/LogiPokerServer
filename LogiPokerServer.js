@@ -1,4 +1,3 @@
-const e = require('express')
 const express = require('express')
 const app = express()
 const http = require('http')
@@ -48,7 +47,6 @@ io.on('connection', (socket) => {
         Log(LogCategories.DEBUG, 'Enter', UserID)
         const User = GetUserData(UserID)
         if (User) {
-            Log(LogCategories.DEBUG, 'UpdateUserSocketID', User.GetUserName())
             User.SetSocketID(socket.id)
         }
     })
@@ -64,8 +62,8 @@ io.on('connection', (socket) => {
 
     // 特定のルームの人数を送る
     socket.on('RequestUserNumInRoomID', (RoomID) => {
-        const PlayersInRoom = UserList.filter(x => x.GetRoomID() === RoomID)
-        io.emit('ResponseUserNumInRoomID', PlayersInRoom)
+        const UsersInRoom = UserList.filter(x => x.GetRoomID() === RoomID).map(x => x.GetUserName())
+        io.emit('ResponseUserNumInRoomID', UsersInRoom)
     })
 
     // クライアントから名前を登録
@@ -83,7 +81,6 @@ io.on('connection', (socket) => {
         // 新規ユーザーデータ作成
         const User = new UserData(UserID, RoomID, UserName)
         User.SetSocketID(socket.id)
-        console.log('CreateUser ' + UserID)
         // すでにルームが存在する
         if (RoomIDList.includes(RoomID)) {
             // ルーム内のユーザーを取得
@@ -93,34 +90,31 @@ io.on('connection', (socket) => {
             // すでに同名が存在する
             if (SameNameUser) {
                 // 登録失敗を新規ユーザーに通知
-                io.to(socket.id).emit('cannot_enter_user', UserName)
-                console.log('cannot enter user: ' + UserName)
+                io.to(socket.id).emit('CannotEnterUser', UserName)
+                Log(LogCategories.DEBUG, 'CannotEnterUser', UserName)
             } else {
                 // ユーザーリストに追加
                 UserList.push(User)
                 // ルーム内に登録を通知
                 io.to(RoomID).emit('EnterPlayer', UserName)
-                console.log('enter user: ' + UserName)
             }
-            console.log(UserList.filter(x => x.GetRoomID() === RoomID))
         } else {
             // ルームがなければ作成
-            console.log('create room: ' + RoomID)
+            socket.join(RoomID)
+            Log(LogCategories.DEBUG, 'CreateRoom', RoomID)
             // ユーザー配列を作成
             RoomIDList.push(RoomID)
             // ユーザーリストに追加
             UserList.push(User)
             // ルーム内に登録を通知
             io.to(RoomID).emit('EnterPlayer', UserName)
-            console.log('enter user: ' + UserName)
         }
     })
     
     // ユーザーデータ取得
     socket.on('RequestUserData', (UserID) => {
-        console.log('RequestUserData ' + UserID)
         const User = GetUserData(UserID)
-        io.to(User.GetSocketID()).emit('ResponseUserData', User.GetUserName())
+        io.to(User.GetSocketID()).emit('ResponseUserData', User.GetUserName(), User.GetRoomID())
     })
 
     socket.on('disconnect', () => {
