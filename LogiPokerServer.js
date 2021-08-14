@@ -12,21 +12,26 @@ const { Server } = require("socket.io");
 const io = new Server(HttpServer)
 
 // 静的リソース使用
-app.use("/public", express.static("public"));
+app.use(express.static("public"));
+app.use(express.static("game"));
 
 // ルーティング設定
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html')
+    res.sendFile(__dirname + '/game/index.html')
 })
-
+/*
 app.get('/game', (req, res) => {
-    res.sendFile(__dirname + '/game.html')
+    res.sendFile(__dirname + '/game/index.html')
 })
-
+*/
 HttpServer.listen(Port)
 
 // ユーザーデータ
 const UserData = require('./src/UserData')
+// API 操作クラス
+const APIController = require('./src/APIController')
+const APINames = require('./src/APINames')
+// ログ
 const { Log, LogCategories } = require('./src/Log')
 
 let UserList = []
@@ -42,9 +47,11 @@ const GetUserData = (UserID) => {
 
 // 接続時イベント
 io.on('connection', (socket) => {
+    const Controller = new APIController(io, socket)
+
     // 接続開始処理
-    socket.on('Enter', (UserID) => {
-        Log(LogCategories.DEBUG, 'Enter', UserID)
+    Controller.CreateAPI(APINames.UserEnter, (UserID) => {
+        Log(LogCategories.DEBUG, APINames.UserEnter, UserID)
         const User = GetUserData(UserID)
         if (User) {
             User.SetSocketID(socket.id)
@@ -52,12 +59,12 @@ io.on('connection', (socket) => {
     })
 
     // ルームの人数を送る
-    socket.on('RequestRoomUserNum', () => {
+    const ResRoomUserNum = Controller.CreateAPI(APINames.RoomUserNum, () => {
         const RoomUserNumMap = {}
         for (let RoomID of RoomIDList) {
             RoomUserNumMap[RoomID] = UserList.filter(x => x.GetRoomID() === RoomID).length
         }
-        io.emit('ResponseRoomUserNum', RoomUserNumMap)
+        ResRoomUserNum(Controller.GetSendType().ALL, RoomUserNumMap)
     })
 
     // 特定のルームの人数を送る
