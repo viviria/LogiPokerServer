@@ -26,25 +26,6 @@ class APIController {
             }
         }
     }
-
-    CallAPI(APIName, ...args) {
-        if (!this._Server) return
-
-        if (args.length > 0) {
-            // 最後の引数をコールバックとする
-            const Callback = args[args.length - 1]
-            // それ以外をレスポンスパラメータにする
-            args = args.slice(0, args.length - 1)
-            // リクエストを送信する
-            if (args.length > 0) {
-                this._Server.emit('Request' + APIName, ...args)
-            } else {
-                this._Server.emit('Request' + APIName)
-            }
-            // レスポンスのコールバック
-            this._Server.on('Response' + APIName, Callback)
-        }
-    }
 }
 
 module.exports = APIController
