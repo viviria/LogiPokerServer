@@ -1,7 +1,8 @@
 const APINames = {
     UserEnter: 'UserEnter',
     RoomUserNum: 'RoomUserNum',
-    UserNumInRoom: 'UserNumInRoom'
+    UserNumInRoom: 'UserNumInRoom',
+    CreateRoom: 'CreateRoom'
 }
 
 module.exports = APINames

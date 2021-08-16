@@ -28,6 +28,8 @@ HttpServer.listen(Port)
 
 // ユーザーデータ
 const UserData = require('./src/UserData')
+// ルームデータ
+const RoomData = require('./src/RoomData')
 // API 操作クラス
 const APIController = require('./src/APIController')
 const APINames = require('./src/APINames')
@@ -36,6 +38,7 @@ const { Log, LogCategories } = require('./src/Log')
 
 let UserList = []
 let RoomIDList = []
+let RoomList = []
 
 const GetUserData = (UserID) => {
     const Users = UserList.filter(x => x.GetUserID() === UserID)
@@ -52,10 +55,6 @@ io.on('connection', (socket) => {
     // 接続開始処理
     Controller.CreateAPI(APINames.UserEnter, (UserID) => {
         Log(LogCategories.DEBUG, APINames.UserEnter, UserID)
-        const User = GetUserData(UserID)
-        if (User) {
-            User.SetSocketID(socket.id)
-        }
     })
 
     // ルームの人数を送る
@@ -65,6 +64,15 @@ io.on('connection', (socket) => {
             RoomUserNumMap[RoomID] = UserList.filter(x => x.GetRoomID() === RoomID).length
         }
         ResRoomUserNum(Controller.GetSendType().ALL, RoomUserNumMap)
+    })
+
+    const ResCreateRoom = Controller.CreateAPI(APINames.CreateRoom, (UserID, UserName, Passward) => {
+        const RoomID = 'abc'
+        const Room = new RoomData(RoomID, UserID, Passward)
+        const User = new UserData(UserID, RoomID, UserName)
+        Room.AddUser(User)
+        RoomList.push(Room)
+        ResCreateRoom(Controller.GetSendType().ONLY)
     })
 
     // 特定のルームの人数を送る

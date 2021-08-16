@@ -22,7 +22,7 @@ class APIController {
             if (SendTo === this.GetSendType().ALL) {
                 this._Server.emit('Response' + APIName, ...args)
             } else {
-                this._Server.to(SendID).emit('Response' + APIName, ...args)
+                this._Server.to(SendTo).emit('Response' + APIName, ...args)
             }
         }
     }
