@@ -53,26 +53,17 @@ io.on('connection', (socket) => {
     const Controller = new APIController(io, socket)
 
     // 接続開始処理
-    Controller.CreateAPI(APINames.UserEnter, (UserID) => {
+    const ResUserEnter = Controller.CreateAPI(APINames.UserEnter, (UserID) => {
         Log(LogCategories.DEBUG, APINames.UserEnter, UserID)
-    })
-
-    // ルームの人数を送る
-    const ResRoomUserNum = Controller.CreateAPI(APINames.RoomUserNum, () => {
-        const RoomUserNumMap = {}
-        for (let RoomID of RoomIDList) {
-            RoomUserNumMap[RoomID] = UserList.filter(x => x.GetRoomID() === RoomID).length
-        }
-        ResRoomUserNum(Controller.GetSendType().ALL, RoomUserNumMap)
+        ResUserEnter(Controller.GetSendType().ONLY, RoomList)
     })
 
     const ResCreateRoom = Controller.CreateAPI(APINames.CreateRoom, (UserID, UserName, Passward) => {
-        const RoomID = 'abc'
-        const Room = new RoomData(RoomID, UserID, Passward)
-        const User = new UserData(UserID, RoomID, UserName)
+        const Room = new RoomData(UserID, Passward)
+        const User = new UserData(UserID, Room.GetRoomID(), UserName)
         Room.AddUser(User)
         RoomList.push(Room)
-        ResCreateRoom(Controller.GetSendType().ONLY)
+        ResCreateRoom(Controller.GetSendType().ONLY, Room)
     })
 
     // 特定のルームの人数を送る
